@@ -1098,6 +1098,15 @@ static void goHome(Code* code)
     updateColumn(code);
 }
 
+static void goIndent(Code* code)
+{
+    goHome(code);
+    while(*code->cursor.position == ' ' || *code->cursor.position == '\t')
+        code->cursor.position++;
+
+    updateColumn(code);
+}
+
 static void goEnd(Code* code)
 {
     char* line = getLine(code);
@@ -2400,11 +2409,7 @@ static bool processViPosition(Code* code, bool ctrl, bool alt, bool shift)
     else if (clear && keyWasPressed(code->studio, tic_key_w)) rightWord(code);
 
     else if (shift && keyWasPressed(code->studio, tic_key_6))
-    {
-        goHome(code);
-        while (*code->cursor.position == ' ' || *code->cursor.position == '\t')
-            code->cursor.position++;
-    }
+        goIndent(code);
 
     else if (shift && keyWasPressed(code->studio, tic_key_j))
         halfPageDown(code);
@@ -2652,10 +2657,21 @@ static void processViKeyboard(Code* code)
         else if (clear && keyWasPressed(code->studio, tic_key_i))
             setStudioViMode(code->studio, VI_INSERT);
 
+        else if (shift && keyWasPressed(code->studio, tic_key_i))
+        {
+            setStudioViMode(code->studio, VI_INSERT);
+            goIndent(code);
+        }
+
         else if (clear && keyWasPressed(code->studio, tic_key_a))
         {
             setStudioViMode(code->studio, VI_INSERT);
             rightColumn(code);
+        }
+        else if (shift && keyWasPressed(code->studio, tic_key_a))
+        {
+            setStudioViMode(code->studio, VI_INSERT);
+            goEnd(code);
         }
         else if (clear && keyWasPressed(code->studio, tic_key_o))
         {
