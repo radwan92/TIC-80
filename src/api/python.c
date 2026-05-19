@@ -215,18 +215,33 @@ static bool py_circb(int argc, py_Ref argv)
     return true;
 }
 
+// clip()
 // clip(x: int, y: int, width: int, height: int)
 // void (*clip)(tic_mem*, s32, s32, s32, s32)
 static bool py_clip(int argc, py_Ref argv)
 {
-    for (int i = 0; i < 4; i++)
+    if (argc != 0 && argc != 4)
     {
-        PY_CHECK_ARG_TYPE(i, tp_int);
+        return TypeError("clip() expected 0 or 4 arguments, got %d", argc);
     }
-    s32 x = py_toint(py_arg(0));
-    s32 y = py_toint(py_arg(1));
-    s32 width = py_toint(py_arg(2));
-    s32 height = py_toint(py_arg(3));
+
+    s32 x = 0;
+    s32 y = 0;
+    s32 width = TIC80_WIDTH;
+    s32 height = TIC80_HEIGHT;
+
+    if (argc == 4)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            PY_CHECK_ARG_TYPE(i, tp_int);
+        }
+
+        x = py_toint(py_arg(0));
+        y = py_toint(py_arg(1));
+        width = py_toint(py_arg(2));
+        height = py_toint(py_arg(3));
+    }
 
     tic_core* core = get_core();
     core->api.clip((tic_mem*)core, x, y, width, height);
@@ -1081,7 +1096,7 @@ static void bind_pkpy_v2()
     py_bind(mod, "print(text, x=0, y=0, color=15, fixed=False, scale=1, alt=False)", py_print);
     py_bind(mod, "circ(x: int, y: int, radius: int, color: int)", py_circ);
     py_bind(mod, "circb(x: int, y: int, radius: int, color: int)", py_circb);
-    py_bind(mod, "clip(x: int, y: int, width: int, height: int)", py_clip);
+    py_bindfunc(mod, "clip", py_clip);
     py_bind(mod, "elli(x: int, y: int, a: int, b: int, color: int)", py_elli);
     py_bind(mod, "ellib(x: int, y: int, a: int, b: int, color: int)", py_ellib);
     py_bind(mod, "exit()", py_exit);
