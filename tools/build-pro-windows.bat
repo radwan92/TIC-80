@@ -61,6 +61,7 @@ if not defined MSVC_GENERATOR (
     echo error: no Visual Studio C++ toolchain was found. 1>&2
     exit /b 1
 )
+set "MSVC_CONFIGURED=1"
 
 call :select_build_dir msvc
 call :prepare_build_dir
@@ -99,7 +100,6 @@ if defined MSVC_TOOLSET (
         -DCMAKE_EXPORT_COMPILE_COMMANDS=On
 )
 if errorlevel 1 exit /b 1
-set "MSVC_CONFIGURED=1"
 
 if defined CONFIGURE_ONLY (
     echo.
@@ -338,10 +338,10 @@ if not exist "%ACTIVE_BUILD_DIR%\CMakeCache.txt" exit /b 0
 
 set "CACHE_HOME="
 for /f "tokens=1,* delims==" %%A in ('findstr /B /C:"CMAKE_HOME_DIRECTORY:INTERNAL=" "%ACTIVE_BUILD_DIR%\CMakeCache.txt" 2^>nul') do set "CACHE_HOME=%%B"
-if not defined CACHE_HOME exit /b 0
+if not defined CACHE_HOME goto :check_build_type
 
 set "CACHE_HOME_NORM=!CACHE_HOME:/=\!"
-if /I "!CACHE_HOME_NORM!"=="%ROOT_DIR%" exit /b 0
+if /I "!CACHE_HOME_NORM!"=="%ROOT_DIR%" goto :check_build_type
 
 if defined BUILD_DIR (
     echo error: BUILD_DIR contains a CMake cache for a different source directory: !CACHE_HOME! 1>&2
@@ -405,5 +405,21 @@ for %%D in (
     "%SystemDrive%\Ruby27\msys32\mingw32\bin"
 ) do (
     if exist "%%~D" call set "PATH=%%~D;%%PATH%%"
+)
+exit /b 0
+
+:check_build_type
+set "CACHE_BUILD_TYPE="
+for /f "tokens=1,* delims==" %%A in ('findstr /R /C:"^CMAKE_BUILD_TYPE:.*=" "%ACTIVE_BUILD_DIR%\CMakeCache.txt" 2^>nul') do set "CACHE_BUILD_TYPE=%%B"
+if not defined CACHE_BUILD_TYPE exit /b 0
+if /I "!CACHE_BUILD_TYPE!"=="%BUILD_TYPE%" exit /b 0
+
+echo warning: cleaning previous %CACHE_BUILD_TYPE% build artifacts in: %ACTIVE_BUILD_DIR% 1>&2
+echo          requested BUILD_TYPE=%BUILD_TYPE% 1>&2
+cmake --build "%ACTIVE_BUILD_DIR%" --config "!CACHE_BUILD_TYPE!" --target clean
+if errorlevel 1 (
+    echo error: failed to clean previous BUILD_TYPE=!CACHE_BUILD_TYPE!. 1>&2
+    echo Close running binaries from %ACTIVE_BUILD_DIR%\bin and try again. 1>&2
+    exit /b 1
 )
 exit /b 0
