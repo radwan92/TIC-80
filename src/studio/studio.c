@@ -2068,7 +2068,12 @@ static void checkChanges(Studio* studio)
 
             if(studio->cart.mdate && date > studio->cart.mdate)
             {
-                if(studioCartChanged(studio) && studio->mode != TIC_MENU_MODE)
+                if(studio->mode == TIC_RUN_MODE || studio->mode == TIC_CONSOLE_MODE)
+                {
+                    console->updateProject(console);
+                    runGame(studio);
+                }
+                else if(studioCartChanged(studio) && studio->mode != TIC_MENU_MODE)
                 {
                     static const char* Rows[] =
                     {
